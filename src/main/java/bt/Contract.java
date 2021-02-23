@@ -25,6 +25,13 @@ import burst.kit.entity.BurstID;
  * arguments.
  * 
  * @author jjos
+ * 
+ * * Lao 02/23/2012: Add four methods to support asset
+ *                       Mold
+ *                       Mint
+ *                       getCurrentTxAssetId
+ *                       getCurrentTxAssetAmount
+ *                       getAssetAvailableBalance
  *
  */
 public abstract class Contract {
@@ -150,6 +157,38 @@ public abstract class Contract {
 	}
 
 	/**
+	 * Issue a new asset.
+	 *
+	 * @param assetName  the name of the asset 
+	 * @param assetDesc  the description of the asset 
+	 * @param assetQuantity the total castable amount of the asset
+	 * @param assetDecimals the decimals of the asset
+	 */
+	protected long mold(String assetName, String assetDesc, long assetQuantity, long assetDecimals) {
+
+		if(assetName == null || assetName.length() > 16)
+			return -1;
+
+		if(assetDesc == null || assetDesc.length() > 32)
+			return -2;
+
+		return Emulator.getInstance().issueAsset(address, assetName, assetDesc, assetQuantity, assetDecimals);
+	}
+
+	/**
+	 * Send the given amount of the given asset to the given address.
+	 *
+	 * @param amount   the amount of Burstcoin 
+	 * @param message  the message, truncated in 4*sizeof(long)
+	 * @param assetId  the Id of the asset 
+	 * @param assetAmount   the amount of the asset
+	 * @param receiver the address
+	 */
+	protected void mint(long amount, String message, long assetId, long assetAmount, Address receiver) {
+		Emulator.getInstance().sendAsset(address, receiver, amount, message, assetId, assetAmount);
+	}
+
+	/**
 	 * Function to be called before processing the transactions of the current
 	 * block.
 	 * 
@@ -211,6 +250,20 @@ public abstract class Contract {
 	}
 
 	/**
+	 * @return the current transaction asset id
+	 */
+	protected long getCurrentTxAssetId() {
+		return getCurrentTx().getAssetId();
+	}
+
+	/**
+	 * @return the current transaction asset amount
+	 */
+	protected long getCurrentTxAssetAmount() {
+		return getCurrentTx().getAssetAmount();
+	}
+
+	/**
 	 * @return the block hash of the previous block (part 1 of 4)
 	 */
 	protected Register getPrevBlockHash() {
@@ -264,6 +317,16 @@ public abstract class Contract {
 	 */
 	protected long getCurrentBalance() {
 		return address.balance;
+	}
+
+	/**
+	 * @return the asset balance of this contract
+	 */
+	protected long getAssetAvailableBalance(long assetId) {
+		if(address.asset != null && address.asset.id == assetId)
+			return address.asset.balance;
+		else
+			return -1;
 	}
 
 	@EmulatorWarning
@@ -389,6 +452,14 @@ public abstract class Contract {
 				e.printStackTrace();
 			}
 		}
+
+		if(address.asset != null && address.asset.id > 0L ){
+			ret += "<br>Asset<br><b>   Name</b> = " + address.asset.name + "<br>";
+			ret += "   Available Balance</b> = " + getAssetAvailableBalance(address.asset.id) / Math.pow(10, address.asset.decimals) + "<br>";
+		}
+		else
+			ret += "<br>No Asset Yet<br>";
+
 		return ret;
 	}
 

@@ -1,5 +1,11 @@
 /*
  * Copyright (c) 2014 CIYAM Developers
+ * 
+ * Lao 02/23/2012: Add the below OpCode to support Asset
+ *                   Get_AssetId_For_Tx_In_A
+ *                   Get_AssetAmount_For_Tx_In_A
+ *                   A_Mold_In_A_And_B
+ *                   Mint_A_With_B234_To_Address_In_B1
 
  Distributed under the MIT/X11 software license, please refer to the file license.txt
  in the root project directory or http://www.opensource.org/licenses/mit-license.php.
@@ -64,8 +70,8 @@ final class OpCode {
   static final short Set_A1_A2 = 0x0114; // EXT_FUN_DAT_2     sets A1 from $addr1 and A2 from $addr2 // Unused
   static final short Set_A3_A4 = 0x0115; // EXT_FUN_DAT_2     sets A3 from $addr1 and A4 from $addr2 // Unused
   static final short Set_B1    = 0x0116; // EXT_FUN_DAT       sets B1 from $addr
-  static final short Set_B2    = 0x0117; // EXT_FUN_DAT       sets B2 from $addr // Unused
-  static final short Set_B3    = 0x0118; // EXT_FUN_DAT       sets B3 from $addr // Unused
+  static final short Set_B2    = 0x0117; // EXT_FUN_DAT       sets B2 from $addr 
+  static final short Set_B3    = 0x0118; // EXT_FUN_DAT       sets B3 from $addr 
   static final short Set_B4    = 0x0119; // EXT_FUN_DAT       sets B4 from $addr // Unused
   static final short Set_B1_B2 = 0x011a; // EXT_FUN_DAT_2     sets B1 from $addr1 and B2 from $addr2 // Unused
   static final short Set_B3_B4 = 0x011b; // EXT_FUN_DAT_2     sets B3 from $addr1 and B4 from $addr2 // Unused
@@ -114,6 +120,8 @@ final class OpCode {
   static final short Message_From_Tx_In_A_To_B = 0x0309; // EXT_FUN           if A is a valid tx then B to the tx message****
   static final short B_To_Address_Of_Tx_In_A   = 0x030a; // EXT_FUN           if A is a valid tx then B set to the tx address
   static final short B_To_Address_Of_Creator   = 0x030b; // EXT_FUN           sets B to the address of the AT's creator
+  static final short Get_AssetId_For_Tx_In_A        = 0x030c; // EXT_FUN_RET       if A is a valid tx then @addr to tx asset id
+  static final short Get_AssetAmount_For_Tx_In_A    = 0x030d; // EXT_FUN_RET       if A is a valid tx then @addr to tx asset amount
   
   static final short Get_Current_Balance      = 0x0400; // EXT_FUN_RET       sets @addr to current balance of the AT
   static final short Get_Previous_Balance     = 0x0401; // EXT_FUN_RET       sets @addr to the balance it had last had when running* // Unused
@@ -122,4 +130,11 @@ final class OpCode {
   static final short Send_Old_To_Address_In_B = 0x0404; // EXT_FUN           if B is a valid address then send it the old balance** // Unused
   static final short Send_A_To_Address_In_B   = 0x0405; // EXT_FUN           if B is a valid address then send it A as a message
   static final short Add_Minutes_To_Timestamp = 0x0406; // EXT_FUN_RET_DAT_2 set @addr1 to timestamp $addr2 plus $addr3 minutes***
+
+  static final short A_Mold_In_A_And_B        = 0x0407; // EXT_FUN_RET       if Mold set A to the asset id, asset information in
+                                                        //      B1(assetDecimals) B2(assetQuantity) A1~4(assetDesc) B3-4(assetName)
+
+  static final short Mint_A_With_B234_To_Address_In_B1 = 0x0408; // EXT_FUN_RET if B1 is a valid address then send it the amount, asset and msg
+                                                                 //  B1(address) B2(asset amount) A1~4(message) B3(asset id) B4(amount)
+
 }

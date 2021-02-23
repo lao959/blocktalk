@@ -2,6 +2,7 @@ package bt;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Random;
 
 import burst.kit.crypto.BurstCrypto;
 import burst.kit.entity.BurstID;
@@ -10,6 +11,8 @@ import burst.kit.entity.BurstID;
  * Emulates the blockchain for debugging/testing purposes.
  * 
  * @author jjos
+ * 
+ *  * * Lao 02/23/2012: Add asset support
  *
  */
 public class Emulator {
@@ -28,6 +31,7 @@ public class Emulator {
 	ArrayList<Block> blocks = new ArrayList<Block>();
 	ArrayList<Transaction> txs = new ArrayList<Transaction>();
 	ArrayList<Address> addresses = new ArrayList<Address>();
+	ArrayList<Asset> assets = new ArrayList<Asset>();
 
 	public ArrayList<Block> getBlocks() {
 		return blocks;
@@ -39,6 +43,10 @@ public class Emulator {
 
 	public ArrayList<Address> getAddresses() {
 		return addresses;
+	}
+
+	public ArrayList<Asset> getAssets() {
+		return assets;
 	}
 
 	Emulator() {
@@ -79,6 +87,14 @@ public class Emulator {
 		return ret;
 	}
 
+	public Asset findAsset(long assetId) {
+		for (Asset a : assets) {
+			if (a.id == assetId)
+				return a;
+		}
+		return null;
+	}
+
 	public static Emulator getInstance() {
 		return instance;
 	}
@@ -99,6 +115,28 @@ public class Emulator {
 		Transaction t = new Transaction(from, to, amount,
 				message.method != null ? Transaction.TYPE_METHOD_CALL : Transaction.TYPE_PAYMENT,
 				new Timestamp(currentBlock.height, currentBlock.txs.size()), message);
+		currentBlock.txs.add(t);
+		t.block = currentBlock;
+		txs.add(t);
+	}
+
+	public long issueAsset(Address owner, String assetName, String assetDesc, long assetQuantity,
+	long assetDecimals) {
+		long assetId = generateAssetId();
+		Asset asset = new Asset(assetId, assetName, assetDesc, assetQuantity, assetDecimals);
+		Transaction t = new Transaction(owner, 0, Transaction.TYPE_ISSUE_ASSET,
+				new Timestamp(currentBlock.height, currentBlock.txs.size()), asset);
+		currentBlock.txs.add(t);
+		t.block = currentBlock;
+		txs.add(t);
+
+		return assetId;
+	}
+
+
+	public void sendAsset(Address from, Address to, long amount, String message, long assetId, long assetAmount) {
+		Transaction t = new Transaction(from, to, amount, message, Transaction.TYPE_SEND_ASSET,
+				new Timestamp(currentBlock.height, currentBlock.txs.size()), assetId, assetAmount);
 		currentBlock.txs.add(t);
 		t.block = currentBlock;
 		txs.add(t);
@@ -145,18 +183,48 @@ public class Emulator {
 		for (Transaction tx : currentBlock.txs) {
 
 			// checking for sleeping contracts
-			if (tx.receiver.isSleeping()) {
+			if (tx.receiver != null && tx.receiver.isSleeping()) {
 				// let it sleep, postpone this transaction
 				pendTxs.add(tx);
 				continue;
 			}
 
 			if (tx.amount > 0) {
-				long amount = Math.min(tx.sender.balance, tx.amount);
-				tx.amount = amount;
+				if(tx.sender != null ){
+					long amount = Math.min(tx.sender.balance, tx.amount);
+					tx.amount = amount;
 
-				tx.sender.balance -= amount;
-				tx.receiver.balance += amount;
+					tx.sender.balance -= amount;
+					if(tx.receiver != null ) {
+						tx.receiver.balance += amount;
+					}
+				}
+			}
+
+			if (tx.type == Transaction.TYPE_ISSUE_ASSET && findAsset(tx.assetId) == null) {
+				assets.add(tx.asset);
+				tx.sender.asset = new Asset(tx.asset, tx.asset.quantity);
+			}
+
+			if (tx.type == Transaction.TYPE_SEND_ASSET) {
+				long assetAmount = 0;
+
+				if(tx.sender.asset != null && tx.sender.asset.id == tx.assetId ){
+					assetAmount = Math.min(tx.sender.asset.balance, tx.assetAmount);
+				}
+
+				if( assetAmount <=0 ){
+					continue;
+				}
+
+				if(tx.receiver.asset == null || tx.receiver.asset.id != tx.assetId ){
+					tx.receiver.asset = new Asset(findAsset(tx.assetId), tx.assetAmount);
+				}
+				else {
+					tx.receiver.asset.balance += assetAmount;
+				}
+
+				tx.sender.asset.balance -= assetAmount;
 			}
 
 			if (tx.type == Transaction.TYPE_AT_CREATE) {
@@ -276,5 +344,22 @@ public class Emulator {
 	public Block getCurrentBlock() {
 		return currentBlock;
 	}
+
+	private long generateAssetId() {
+
+		long assetId = 0;
+
+        // Generate a unqiue id between 10 ~ 89
+        Random rand = new Random(); 
+		while(assetId == 0)
+		{
+			assetId = 10+ rand.nextInt(80);
+			if(findAsset(assetId) != null ) {
+				assetId = 0;
+			}
+		}
+       
+        return assetId;
+    }
 
 }
