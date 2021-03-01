@@ -1343,7 +1343,7 @@ public class Compiler {
 
 							stack.pollLast(); // remove the "this" from stack
 
-							code.put(OpCode.e_op_code_EXT_FUN);
+							code.put(OpCode.e_op_code_EXT_FUN);  //to-do: change to e_op_code_EXT_FUN_RET?
 							code.putShort(OpCode.A_Mold_In_A_And_B);
 
 							code.put(OpCode.e_op_code_EXT_FUN_RET);

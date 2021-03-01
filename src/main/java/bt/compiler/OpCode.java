@@ -131,10 +131,10 @@ final class OpCode {
   static final short Send_A_To_Address_In_B   = 0x0405; // EXT_FUN           if B is a valid address then send it A as a message
   static final short Add_Minutes_To_Timestamp = 0x0406; // EXT_FUN_RET_DAT_2 set @addr1 to timestamp $addr2 plus $addr3 minutes***
 
-  static final short A_Mold_In_A_And_B        = 0x0407; // EXT_FUN_RET       if Mold set A to the asset id, asset information in
+  static final short A_Mold_In_A_And_B        = 0x0407; // EXT_FUN       if Mold set A1 to the asset id, asset information in
                                                         //      B1(assetDecimals) B2(assetQuantity) A1~4(assetDesc) B3-4(assetName)
 
-  static final short Mint_A_With_B234_To_Address_In_B1 = 0x0408; // EXT_FUN_RET if B1 is a valid address then send it the amount, asset and msg
+  static final short Mint_A_With_B234_To_Address_In_B1 = 0x0408; // EXT_FUN if B1 is a valid address then send it the amount, asset and msg
                                                                  //  B1(address) B2(asset amount) A1~4(message) B3(asset id) B4(amount)
 
 }
