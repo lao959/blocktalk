@@ -23,7 +23,7 @@ public class FundsForFaucet  extends Contract {
     static final String ANAME = "FFF";
     static final String ADESC = "Raising funds for burst faucet";
     static final int    ADECIMALS = 8;    
-    static final long   AQUANTITY = 1_000_000_000L * ADECIMALS;
+    static final long   AQUANTITY = 1_000_000_000L * ONE_BURST;
     static final int    EARNRATE = 10;
     static final long   PAYTHRESHOLD = 1000L * ONE_BURST;
     static final int    PERCENTAGETOPAY = 50;
@@ -74,7 +74,11 @@ public class FundsForFaucet  extends Contract {
     }
 
     private void IssueFFF(){
-        coinId = mold(ANAME, ADESC, AQUANTITY, ADECIMALS); 
+        coinId = mold(ANAME, ADESC, AQUANTITY, ADECIMALS);
+        if(coinId > -100 && coinId < 0){
+            //failed to issue fff
+            coinId = 0L;
+        }
     }
 
     private void refund(){
@@ -88,7 +92,7 @@ public class FundsForFaucet  extends Contract {
         txAmount = getCurrentTxAmount();
         txSender = getCurrentTxSender();
 
-        if(coinId <= 0L)
+        if(coinId == 0L )
         {
             if(txSender == holdersContract){
 

@@ -166,11 +166,14 @@ public abstract class Contract {
 	 */
 	protected long mold(String assetName, String assetDesc, long assetQuantity, long assetDecimals) {
 
-		if(assetName == null || assetName.length() > 16)
-			return -1;
+		if(assetName == null || assetName.length() > 10 || assetName.length() < 3)
+			return -2;
 
 		if(assetDesc == null || assetDesc.length() > 32)
-			return -2;
+			return -4;
+
+		if (assetDecimals < 0 || assetDecimals > 8)
+			return -5;
 
 		return Emulator.getInstance().issueAsset(address, assetName, assetDesc, assetQuantity, assetDecimals);
 	}

@@ -1297,7 +1297,7 @@ public class Compiler {
 							arg3 = popVar(m, tmpVar2, false); // assetQuantity
 							code.put(OpCode.e_op_code_EXT_FUN_DAT);
 							code.putShort(OpCode.Set_B2);
-							code.putLong(arg3.address); //address
+							code.putInt(arg3.address); //address
 
 							//assetDesc: It should be a constant string, fill A1-A4 with 4*longs
 							StackVar assetDescVar = stack.pollLast();
@@ -1338,7 +1338,7 @@ public class Compiler {
 
 								code.put(OpCode.e_op_code_EXT_FUN_DAT);
 								code.putShort((short) (OpCode.Set_B3 + a));
-								code.putInt(tmpVar3);
+								code.putInt(tmpVar4);
 							}	
 
 							stack.pollLast(); // remove the "this" from stack
@@ -1360,12 +1360,12 @@ public class Compiler {
 							arg4 = popVar(m, tmpVar4, false); // assetAmount
 							code.put(OpCode.e_op_code_EXT_FUN_DAT);
 							code.putShort(OpCode.Set_B2);
-							code.putLong(arg4.address); //address
+							code.putInt(arg4.address); //address
 
 							arg3 = popVar(m, tmpVar3, false); // assetId
 							code.put(OpCode.e_op_code_EXT_FUN_DAT);
 							code.putShort(OpCode.Set_B3);
-							code.putLong(arg3.address); //address 
+							code.putInt(arg3.address); //address 
 
 							//message: It should be a constant string, fill A1-A4 with 4*longs
 							StackVar msgVar = stack.pollLast();
@@ -1391,7 +1391,7 @@ public class Compiler {
 							arg1 = popVar(m, tmpVar1, false); // amount
 							code.put(OpCode.e_op_code_EXT_FUN_DAT);
 							code.putShort(OpCode.Set_B4);
-							code.putLong(arg1.address);  //address 
+							code.putInt(arg1.address);  //address 
 
 							code.put(OpCode.e_op_code_EXT_FUN);
 							code.putShort(OpCode.Mint_A_With_B234_To_Address_In_B1);
