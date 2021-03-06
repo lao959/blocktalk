@@ -35,10 +35,12 @@ import burst.kit.entity.BurstID;
  * Class to convert a {@link Contract} java bytecode to ciyam bytecode.
  * 
  * @author jjos
+ * 
+ *  Lao 02/23/2012: Change compiler version to 0.0.1 to support asset
  */
 public class Compiler {
 
-	public static final CompilerVersion currentVersion = CompilerVersion.v0_0_0;
+	public static final CompilerVersion currentVersion = CompilerVersion.v0_0_1;
 
 	public static final String INIT_METHOD = "<init>";
 	public static final String MAIN_METHOD = "main";
@@ -66,6 +68,8 @@ public class Compiler {
 	int lastTxTimestamp;
 	int lastTxSender;
 	int lastTxAmount;
+	int lastTxAssetId;
+	int lastTxAssetAmount;
 	int tmpVar1, tmpVar2, tmpVar3, tmpVar4, tmpVar5, tmpVar6;
 	int localStart;
 	boolean useLocal;
@@ -247,6 +251,9 @@ public class Compiler {
 		lastTxAmount = lastFreeVar++;
 		lastTxSender = lastFreeVar++;
 
+		lastTxAssetId = lastFreeVar++;
+	    lastTxAssetAmount = lastFreeVar++;
+
 		// Temporary variables come last (used for pushing and poping values from user
 		// stack)
 		tmpVar1 = lastFreeVar++;
@@ -362,6 +369,14 @@ public class Compiler {
 			code.put(OpCode.e_op_code_EXT_FUN_RET);
 			code.putShort(OpCode.Get_Amount_For_Tx_In_A);
 			code.putInt(lastTxAmount);
+			// Get the asset id of last transaction
+			code.put(OpCode.e_op_code_EXT_FUN_RET);
+			code.putShort(OpCode.Get_AssetId_For_Tx_In_A);
+			code.putInt(lastTxAssetId);
+			// Get the asset amount of last transaction
+			code.put(OpCode.e_op_code_EXT_FUN_RET);
+			code.putShort(OpCode.Get_AssetAmount_For_Tx_In_A);
+			code.putInt(lastTxAssetAmount);
 		}
 
 		if (hasPublicMethods) {
@@ -660,7 +675,7 @@ public class Compiler {
 			}
 		}
 
-		StackVar arg1, arg2, arg3, arg4;
+		StackVar arg1, arg2, arg3, arg4, arg5;
 
 		Iterator<AbstractInsnNode> ite = m.node.instructions.iterator();
 		while (ite.hasNext()) {
@@ -1007,6 +1022,12 @@ public class Compiler {
 						} else if (mi.name.equals("getCurrentTxAmount")) {
 							stack.pollLast(); // remove the "this" from stack
 							pushVar(m, lastTxAmount);
+						} else if (mi.name.equals("getCurrentTxAssetId")) {
+							stack.pollLast(); // remove the "this" from stack
+							pushVar(m, lastTxAssetId);
+						} else if (mi.name.equals("getCurrentTxAssetAmount")) {
+							stack.pollLast(); // remove the "this" from stack
+							pushVar(m, lastTxAssetAmount);
 						} else if (mi.name.equals("getCurrentBalance")) {
 							stack.pollLast(); // remove the "this" from stack
 							code.put(OpCode.e_op_code_EXT_FUN_RET);
@@ -1266,7 +1287,119 @@ public class Compiler {
 							code.putShort(OpCode.Send_A_To_Address_In_B);
 
 							stack.pollLast(); // remove the 'this'
-						} else {
+						} else if (mi.name.equals("mold")) {
+
+							arg4 = popVar(m, tmpVar1, false); // assetDecimals
+							code.put(OpCode.e_op_code_EXT_FUN_DAT);
+							code.putShort(OpCode.Set_B1);
+							code.putInt(arg4.address); //address
+
+							arg3 = popVar(m, tmpVar2, false); // assetQuantity
+							code.put(OpCode.e_op_code_EXT_FUN_DAT);
+							code.putShort(OpCode.Set_B2);
+							code.putInt(arg3.address); //address
+
+							//assetDesc: It should be a constant string, fill A1-A4 with 4*longs
+							StackVar assetDescVar = stack.pollLast();
+							int pos = 0;
+							for (int a = 0; a < 4; a++) {
+								long value = 0;
+								for (int i = 0; i < 8; i++, pos++) {
+									if (pos >= assetDescVar.svalue.length())
+										break;
+									long c = assetDescVar.svalue.charAt(pos);
+									c <<= 8 * i;
+									value += c;
+								}
+								code.put(OpCode.e_op_code_SET_VAL);
+								code.putInt(tmpVar3);
+								code.putLong(value);
+
+								code.put(OpCode.e_op_code_EXT_FUN_DAT);
+								code.putShort((short) (OpCode.Set_A1 + a));
+								code.putInt(tmpVar3);
+							}
+
+							//assetName: It should be a constant string, fill B3-B4 with 2*longs
+							StackVar assetNameVar = stack.pollLast();
+							pos = 0;
+							for (int a = 0; a < 2; a++) {
+								long value = 0;
+								for (int i = 0; i < 8; i++, pos++) {
+									if (pos >= assetNameVar.svalue.length())
+										break;
+									long c = assetNameVar.svalue.charAt(pos);
+									c <<= 8 * i;
+									value += c;
+								}
+								code.put(OpCode.e_op_code_SET_VAL);
+								code.putInt(tmpVar4);
+								code.putLong(value);
+
+								code.put(OpCode.e_op_code_EXT_FUN_DAT);
+								code.putShort((short) (OpCode.Set_B3 + a));
+								code.putInt(tmpVar4);
+							}	
+
+							stack.pollLast(); // remove the "this" from stack
+
+							code.put(OpCode.e_op_code_EXT_FUN);  //to-do: change to e_op_code_EXT_FUN_RET?
+							code.putShort(OpCode.A_Mold_In_A_And_B);
+
+							code.put(OpCode.e_op_code_EXT_FUN_RET);
+							code.putShort(OpCode.Get_A1);
+							code.putInt(tmpVar5);
+							pushVar(m, tmpVar5);
+						} else if (mi.name.equals("mint")) {
+
+							arg5 = popVar(m, tmpVar5, false); // address
+							code.put(OpCode.e_op_code_EXT_FUN_DAT);
+							code.putShort(OpCode.Set_B1);
+							code.putInt(arg5.address); // address
+
+							arg4 = popVar(m, tmpVar4, false); // assetAmount
+							code.put(OpCode.e_op_code_EXT_FUN_DAT);
+							code.putShort(OpCode.Set_B2);
+							code.putInt(arg4.address); //address
+
+							arg3 = popVar(m, tmpVar3, false); // assetId
+							code.put(OpCode.e_op_code_EXT_FUN_DAT);
+							code.putShort(OpCode.Set_B3);
+							code.putInt(arg3.address); //address 
+
+							//message: It should be a constant string, fill A1-A4 with 4*longs
+							StackVar msgVar = stack.pollLast();
+							int pos = 0;
+							for (int a = 0; a < 4; a++) {
+								long value = 0;
+								for (int i = 0; i < 8; i++, pos++) {
+									if (pos >= msgVar.svalue.length())
+										break;
+									long c = msgVar.svalue.charAt(pos);
+									c <<= 8 * i;
+									value += c;
+								}
+								code.put(OpCode.e_op_code_SET_VAL);
+								code.putInt(tmpVar3);
+								code.putLong(value);
+
+								code.put(OpCode.e_op_code_EXT_FUN_DAT);
+								code.putShort((short) (OpCode.Set_A1 + a));
+								code.putInt(tmpVar3);
+							}
+
+							arg1 = popVar(m, tmpVar1, false); // amount
+							code.put(OpCode.e_op_code_EXT_FUN_DAT);
+							code.putShort(OpCode.Set_B4);
+							code.putInt(arg1.address);  //address 
+
+							code.put(OpCode.e_op_code_EXT_FUN);
+							code.putShort(OpCode.Mint_A_With_B234_To_Address_In_B1);
+
+							stack.pollLast(); // remove the 'this'
+
+
+						}else {
 							// check for user defined methods
 							Method mcall = methods.get(mi.name);
 							if (mcall == null) {

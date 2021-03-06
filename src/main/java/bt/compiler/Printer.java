@@ -8,6 +8,13 @@ import java.nio.ByteOrder;
  * Helper class for printing ciyam bytecode.
  * 
  * @author jjos
+ *         
+ * Lao 02/23/2012: Add the below OpCode to support Asset
+ *                   Get_AssetId_For_Tx_In_A
+ *                   Get_AssetAmount_For_Tx_In_A
+ *                   A_Mold_In_A_And_B
+ *                   Mint_A_With_B234_To_Address_In_B1
+ *
  */
 public class Printer {
 
@@ -521,6 +528,18 @@ public class Printer {
 			return "SHA256_A_To_B";
 		case OpCode.Check_SHA256_A_With_B: // = 0x0205; // EXT_FUN_RET @addr to bool if SHA256 hash of A matches B
 			return "Check_SHA256_A_With_B";
+
+		case OpCode.Get_AssetId_For_Tx_In_A: // = 0x030c; //EXT_FUN_RET       if A is a valid tx then @addr to tx asset id
+		return "Get_AssetId_For_Tx_In_A";
+		case OpCode.Get_AssetAmount_For_Tx_In_A: // = 0x030d; // EXT_FUN_RET       if A is a valid tx then @addr to tx asset amount
+		return "Get_AssetAmount_For_Tx_In_A";
+		case OpCode.A_Mold_In_A_And_B: //  = 0x0407; // EXT_FUN_RET       if Mold set A to the asset id, asset information in
+													//      B1(assetDecimals) B2(assetQuantity) A1~4(assetDesc) B3-4(assetName)
+		return "A_Mold_In_A_And_B";
+		case OpCode.Mint_A_With_B234_To_Address_In_B1: // = 0x0408; // EXT_FUN_RET if B1 is a valid address then send it the amount, asset and msg
+													   //  B1(address) B2(asset amount) A1~4(message) B3(asset id) B4(amount)
+		return "Mint_A_With_B234_To_Address_In_B1";
+
 
 		default:
 			return "UNKNOWN FUNCTION";

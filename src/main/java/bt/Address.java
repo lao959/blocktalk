@@ -10,6 +10,10 @@ package bt;
  * {@link Transaction#getSenderAddress()}.
  * 
  * @author jjos
+ * 
+ * Lao 02/23/2012: Add  asset field
+ * 
+ * To-do: support mutiple assets. ***Smart contract supports multiple assets, just the Emulator not yet.***
  */
 public class Address {
 
@@ -17,6 +21,7 @@ public class Address {
 	String rsAddress;
 	long balance;
 	Contract contract;
+	Asset asset;
 	boolean sleeping;
 	
 	/**
@@ -31,6 +36,7 @@ public class Address {
 		this.id = id;
 		this.balance = balance;
 		this.rsAddress = rs;
+		this.asset = null;
 	}
 	
 	/**
@@ -64,6 +70,14 @@ public class Address {
 	public Contract getContract() {
 		return contract;
 	}
+
+	/**
+	 * @return the underlying asset or null
+	 */
+	@EmulatorWarning
+	public Asset getAsset() {
+		return asset;
+	}
 	
 	/**
 	 * @return true if it is a sleeping contract
@@ -82,5 +96,19 @@ public class Address {
 	@EmulatorWarning
 	public String toString() {
 		return rsAddress;
+	}
+
+	@EmulatorWarning
+	public String getFieldValues() {
+		String ret = "<html>";
+	
+		if(asset != null && asset.id > 0L ){
+			ret += "<br>Asset<br><b>   Name</b> = " + asset.name + "<br>";
+			ret += "   Balance</b> = " + asset.balance / Math.pow(10, asset.decimals) + "<br>";
+		}
+		else
+			ret += "No Asset Yet<br>";
+
+		return ret;
 	}
 }

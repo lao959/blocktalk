@@ -38,6 +38,9 @@ import jiconfont.swing.IconFontSwing;
  * 
  * @author jjos
  *
+ * Lao 02/23/2012: add asset support
+ * 
+ * To-do: support mutiple assets
  */
 @SuppressWarnings("serial")
 public class EmulatorWindow extends JFrame implements ActionListener {
@@ -55,6 +58,7 @@ public class EmulatorWindow extends JFrame implements ActionListener {
 	private JComboBox<Address> sendFrom;
 	private JComboBox<Address> sendTo;
 	private JTextField sendAmount;
+	private JTextField sendAssetAmount;
 	private HintTextField sendMessage;
 	private JComboBox<Address> atCreator;
 	private JTextField atClassField;
@@ -96,13 +100,14 @@ public class EmulatorWindow extends JFrame implements ActionListener {
 		JPanel topPanel = new JPanel(new BorderLayout());
 		getContentPane().add(topPanel, BorderLayout.PAGE_START);
 
-		JPanel cmdPanel = new JPanel(new GridLayout(0, 5, 2, 0));
+		JPanel cmdPanel = new JPanel(new GridLayout(0, 6, 2, 0));
 		cmdPanel.setBorder(new TitledBorder("ACTIONS"));
 		topPanel.add(cmdPanel, BorderLayout.LINE_START);
 
 		cmdPanel.add(forgeButton = new JButton("Forge block"));
 		forgeButton.addActionListener(this);
 		cmdPanel.add(blockLabel = new JLabel());
+		cmdPanel.add(new JLabel());
 		cmdPanel.add(new JLabel());
 		cmdPanel.add(new JLabel());
 		cmdPanel.add(new JLabel());
@@ -115,6 +120,7 @@ public class EmulatorWindow extends JFrame implements ActionListener {
 		airDropAmount.setToolTipText("The amount to air drop in BURST = 10\u2078 NQT");
 		cmdPanel.add(new JLabel());
 		cmdPanel.add(new JLabel());
+		cmdPanel.add(new JLabel());
 
 		cmdPanel.add(sendButton = new JButton("Send"));
 		sendButton.addActionListener(this);
@@ -125,6 +131,8 @@ public class EmulatorWindow extends JFrame implements ActionListener {
 		sendTo.addActionListener(this);
 		cmdPanel.add(sendAmount = new HintTextField("Amount", sendButton));
 		sendAmount.setToolTipText("The amount to send in BURST = 10\u2078 NQT");
+		cmdPanel.add(sendAssetAmount = new HintTextField("Asset Amount", sendButton));
+		sendAssetAmount.setToolTipText("The asset amount to send");
 		cmdPanel.add(sendMessage = new HintTextField("Message/Function", sendButton));
 		sendMessage.setToolTipText("The message to send or contract function to call");
 
@@ -172,6 +180,8 @@ public class EmulatorWindow extends JFrame implements ActionListener {
 					Address add = (Address) value;
 					if (add.getContract() != null)
 						c.setToolTipText(add.getContract().getFieldValues());
+					else
+						c.setToolTipText(add.getFieldValues());
 				}
 				return c;
 			}
@@ -253,12 +263,22 @@ public class EmulatorWindow extends JFrame implements ActionListener {
 				case CONF_COL:
 					return Emulator.getInstance().getCurrentBlock().getHeight() - tx.getBlock().getHeight() - 1;
 				case TYPE_COL:
-					if (tx.getType() == 2)
-						return "New contract";
-					else if (tx.getType() == 1)
-						return "Message";
-					else
-						return "Payment";
+					switch(tx.getType()) {
+						case Transaction.TYPE_AT_CREATE:
+							return "New contract";
+						case Transaction.TYPE_MESSAGING:
+							return "Message";
+						case Transaction.TYPE_PAYMENT:
+							return "Payment";
+						case Transaction.TYPE_METHOD_CALL:
+							return "Method Call";
+						case Transaction.TYPE_ISSUE_ASSET:
+							return "Issue Asset";
+						case Transaction.TYPE_SEND_ASSET:
+							return "Send Asset";
+						default:
+							return "Unkown";
+					}
 				case SENDER_COL:
 					return tx.getSenderAddress() == null ? null : tx.getSenderAddress().getRsAddress();
 				case RECEIVER_COL:
@@ -266,7 +286,10 @@ public class EmulatorWindow extends JFrame implements ActionListener {
 				case MSG_COL:
 					return tx.getMessageString() != null ? tx.getMessageString() : tx.getMessage();
 				case AMOUNT_COL:
-					return ((double) tx.getAmount()) / Contract.ONE_BURST;
+				    if(tx.getType() == Transaction.TYPE_SEND_ASSET)
+						return ((double) tx.getAmount()) / Contract.ONE_BURST + "(" + tx.getAssetAmount() / Math.pow(10, tx.getSenderAddress().getAsset().getDecimals()) + tx.getSenderAddress().getAsset().getName() + ")";
+					else
+						return ((double) tx.getAmount()) / Contract.ONE_BURST;
 				default:
 					break;
 				}
@@ -379,15 +402,44 @@ public class EmulatorWindow extends JFrame implements ActionListener {
 			}
 			amount *= Contract.ONE_BURST;
 
-			Emulator emu = Emulator.getInstance();
+			long assetAmount = 0;
+			try {
 
-			Register msgReg = (Register) sendMessage.getObject();
-			if (msgReg != null) {
-				emu.send(from, to, (long) amount, msgReg);
-			} else {
-				String msg = sendMessage.isShowingHint() ? null : sendMessage.getText();
-				emu.send(from, to, (long) amount, msg);
+				bt.Asset asset = from.getAsset();
+				if(asset != null && asset.getId() > 0){
+					assetAmount = Math.round(Double.parseDouble(sendAssetAmount.getText()) * Math.pow(10, asset.getDecimals()));
+					assetAmount = Math.min(assetAmount, asset.getBalance());
+				}
+
+			} catch (Exception ex) {
+
+				assetAmount = 0;
 			}
+
+			Emulator emu = Emulator.getInstance();
+			Register msgReg = (Register) sendMessage.getObject();
+
+			if(assetAmount > 0){
+
+				if (msgReg != null) {
+					//to-do: call contract method with asset
+				}
+				else{
+
+					String msg = sendMessage.isShowingHint() ? "" : sendMessage.getText();
+					emu.sendAsset(from, to, (long) amount, msg, from.getAsset().getId(), assetAmount);
+				}
+			}
+			else{
+
+				if (msgReg != null) {
+					emu.send(from, to, (long) amount, msgReg);
+				} else {
+					String msg = sendMessage.isShowingHint() ? null : sendMessage.getText();
+					emu.send(from, to, (long) amount, msg);
+				}
+			}
+
 			txsTableModel.fireTableDataChanged();
 			addrsTableModel.fireTableDataChanged();
 		} else if (e.getSource() == createATButton) {
