@@ -1034,6 +1034,18 @@ public class Compiler {
 							code.putShort(OpCode.Get_Current_Balance);
 							code.putInt(tmpVar1);
 							pushVar(m, tmpVar1);
+						} else if (mi.name.equals("getAssetMintableBalance")) {
+								arg1 = popVar(m, tmpVar1, false); // asset id
+								stack.pollLast(); // remove the 'this'
+	
+								code.put(OpCode.e_op_code_EXT_FUN_DAT);
+								code.putShort(OpCode.Set_B1);
+								code.putInt(arg1.address); // address
+	
+								code.put(OpCode.e_op_code_EXT_FUN_RET);
+								code.putShort(OpCode.Get_Asset_Mintable_Balance);
+								code.putInt(tmpVar1);
+								pushVar(m, tmpVar1);
 						} else if (mi.name.equals("getTxAfterTimestamp")) {
 							arg1 = popVar(m, tmpVar1, false); // timestamp
 							stack.pollLast(); // remove the "this" from stack
@@ -1398,7 +1410,7 @@ public class Compiler {
 
 							stack.pollLast(); // remove the 'this'
 
-
+						
 						}else {
 							// check for user defined methods
 							Method mcall = methods.get(mi.name);

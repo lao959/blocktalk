@@ -14,31 +14,28 @@ import bt.compiler.TargetCompilerVersion;
  * This contract allows users to supply bursts for FFF token and withdral their bursts by transfering back the FFFs. 
  * The contact will send bursts for faucet distrucation when it more than PAYTHRESHOLD.
  * 
+ * 
  * @author lao
  *
  */
 @TargetCompilerVersion(CompilerVersion.v0_0_1)
 public class FundsForFaucet  extends Contract {
-    static final long   ONE_PRECENT = 10000L; 
+
     static final String ANAME = "FFF";
-    static final String ADESC = "Raising funds for burst faucet";
+    static final String ADESC = "Hold FFF to support BURST";
     static final int    ADECIMALS = 8;    
-    static final long   AQUANTITY = 1_000_000_000L * ONE_BURST;
-    static final int    EARNRATE = 10;
+    static final long   ACAPABILITY = 1_000_000_000L * ONE_BURST;
+
     static final long   PAYTHRESHOLD = 1000L * ONE_BURST;
-    static final int    PERCENTAGETOPAY = 50;
-    static final long   INITEXCHANGERATE = 50 * ONE_PRECENT; 
-    static final String MSGTOSUPPLIER = "Thank you for supporting the Faucet";
+    static final int    PERCENTAGETOPAY = 20;
+    static final String MSGTOSUPPLIER = "Thank you for supporting.";
+    static final String MSGFAILTOWITHDRAL = "Sorry, no enough BURST.";
 
     long coinId = 0L;
     Address holdersContract;
-    long earnPayable = 0L;
-    long earnPaid = 0L;
-    long currentExchangeRate = INITEXCHANGERATE;
 
     Address txSender;
     long txAmount;
-    long txAssetId;
  
     public FundsForFaucet(){
 
@@ -49,34 +46,39 @@ public class FundsForFaucet  extends Contract {
  
         if(txAmount > 0){
 
-            long amountForCoin = txAmount * (100 - EARNRATE)/100;
-            earnPayable += txAmount - amountForCoin;
+            if(txAmount < getAssetMintableBalance(coinId)){
 
-            mint(0, MSGTOSUPPLIER, coinId, amountForCoin * currentExchangeRate / ONE_PRECENT, txSender);
+                mint(0, MSGTOSUPPLIER, coinId, txAmount, txSender);
 
-            SendFundsToFaucet();
+                SendFundsToFaucet();
+            }
+            else
+                refund();
         }
     }
 
     private void withdrawal(){
 
-        long amount = getCurrentTxAssetAmount() * ONE_PRECENT / currentExchangeRate;
-        if(amount > 0)
+        long amount = getCurrentTxAssetAmount();
+        if(amount > 0 && amount < getCurrentBalance()) 
             sendAmount(amount, txSender);
+        else{
+            mint(0, MSGFAILTOWITHDRAL, coinId, amount, txSender);
+        }
     }
 
     private void SendFundsToFaucet(){
 
-        if( earnPayable > PAYTHRESHOLD ){
-            sendAmount( earnPayable * PERCENTAGETOPAY / 100, holdersContract);
+        if( getCurrentBalance() > PAYTHRESHOLD ){
+            sendAmount( getCurrentBalance() * PERCENTAGETOPAY / 100, holdersContract);
         }
 
     }
 
-    private void IssueFFF(){
-        coinId = mold(ANAME, ADESC, AQUANTITY, ADECIMALS);
+    private void MoldFFF(){
+        coinId = mold(ANAME, ADESC, ACAPABILITY, ADECIMALS);
         if(coinId > -100 && coinId < 0){
-            //failed to issue fff
+            //failed to mold fff
             coinId = 0L;
         }
     }
@@ -97,19 +99,18 @@ public class FundsForFaucet  extends Contract {
             if(txSender == holdersContract){
 
                 //issue the coin if the holders send funds        
-                IssueFFF();
+                MoldFFF();
             }
             else
             {
-                //return funds if the coin is not ready.
+                //return funds if FFF is not ready.
                 refund();
             }
         }
         else{
 
-            //to supply by only sending burstcoin
-            txAssetId = getCurrentTxAssetId();
-            if( txAssetId != coinId){
+            //to supply by only sending Burst
+            if( getCurrentTxAssetId() != coinId){
 
                 supply();
             }
@@ -123,7 +124,7 @@ public class FundsForFaucet  extends Contract {
 
     public static void main(String[] args) throws Exception {
     	
-        //compile();
+        compile();
 
 
         BT.activateCIP20(true);

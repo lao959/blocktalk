@@ -137,4 +137,6 @@ final class OpCode {
   static final short Mint_A_With_B234_To_Address_In_B1 = 0x0408; // EXT_FUN if B1 is a valid address then send it the amount, asset and msg
                                                                  //  B1(address) B2(asset amount) A1~4(message) B3(asset id) B4(amount)
 
+  static final short Get_Asset_Mintable_Balance = 0x0409; //EXT_FUN_RET       sets @addr to asset mintable balance of the AT
 }
+ 

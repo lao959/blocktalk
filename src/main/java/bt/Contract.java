@@ -161,10 +161,11 @@ public abstract class Contract {
 	 *
 	 * @param assetName  the name of the asset 
 	 * @param assetDesc  the description of the asset 
-	 * @param assetQuantity the total castable amount of the asset
+	 * @param assetCapability the total mintable amount of the asset
 	 * @param assetDecimals the decimals of the asset
+	 * @return the asset id
 	 */
-	protected long mold(String assetName, String assetDesc, long assetQuantity, long assetDecimals) {
+	protected long mold(String assetName, String assetDesc, long assetCapability, long assetDecimals) {
 
 		if(assetName == null || assetName.length() > 10 || assetName.length() < 3)
 			return -2;
@@ -175,14 +176,14 @@ public abstract class Contract {
 		if (assetDecimals < 0 || assetDecimals > 8)
 			return -5;
 
-		return Emulator.getInstance().issueAsset(address, assetName, assetDesc, assetQuantity, assetDecimals);
+		return Emulator.getInstance().issueAsset(address, assetName, assetDesc, assetCapability, assetDecimals);
 	}
 
 	/**
 	 * Send the given amount of the given asset to the given address.
 	 *
 	 * @param amount   the amount of Burstcoin 
-	 * @param message  the message, truncated in 4*sizeof(long)
+	 * @param message  the message, truncated in 4*sizeof(long),  the isText flag set as true
 	 * @param assetId  the Id of the asset 
 	 * @param assetAmount   the amount of the asset
 	 * @param receiver the address
@@ -323,9 +324,9 @@ public abstract class Contract {
 	}
 
 	/**
-	 * @return the asset balance of this contract
+	 * @return the asset mintable balance of this contract
 	 */
-	protected long getAssetAvailableBalance(long assetId) {
+	protected long getAssetMintableBalance(long assetId) {
 		if(address.asset != null && address.asset.id == assetId)
 			return address.asset.balance;
 		else
@@ -458,7 +459,7 @@ public abstract class Contract {
 
 		if(address.asset != null && address.asset.id > 0L ){
 			ret += "<br>Asset<br><b>   Name</b> = " + address.asset.name + "<br>";
-			ret += "   Available Balance</b> = " + getAssetAvailableBalance(address.asset.id) / Math.pow(10, address.asset.decimals) + "<br>";
+			ret += "   Mintable Balance</b> = " + getAssetMintableBalance(address.asset.id) / Math.pow(10, address.asset.decimals) + "<br>";
 		}
 		else
 			ret += "<br>No Asset Yet<br>";
