@@ -10,11 +10,13 @@ import bt.compiler.Field;
 import bt.compiler.Method;
 import burst.kit.crypto.BurstCrypto;
 import burst.kit.entity.BurstAddress;
+import burst.kit.entity.BurstID;
 import burst.kit.entity.BurstValue;
 import burst.kit.entity.response.AT;
 import burst.kit.entity.response.TransactionBroadcast;
 import burst.kit.service.BurstNodeService;
 import io.reactivex.Single;
+import burst.kit.entity.response.AssetBalance;
 
 /**
  * BlockTalk Utility functions for handling on-chain contract interactions.
@@ -376,6 +378,45 @@ public class BT {
     public static BurstValue getContractBalance(AT contract) {
         contract = bns.getAt(contract.getId()).blockingGet();
         return contract.getBalance();
+    }
+
+    /**
+     * @param assetId
+     * @return the asset for the given assetId
+     */
+    public static burst.kit.entity.response.Asset getAsset(BurstID assetId) {
+
+        return bns.getAsset(assetId).blockingGet();
+    }
+
+    /**
+     * @param accountId
+     * @param assetId
+     * @return the balance for the given accountid and assetId
+     */
+    public static BurstValue getAccountAssetBanlance(BurstAddress account, BurstID assetId) {
+
+        AssetBalance[] assetBalances = bns.getAssetBalances(assetId, 0, -1).blockingGet();
+        for (AssetBalance assetBalance : assetBalances) {
+            if(assetBalance.getAccountAddress().getSignedLongId() == account.getSignedLongId())
+                return assetBalance.getBalance();
+        }
+
+        return BurstValue.ZERO;
+     
+    }
+
+    public static Single<TransactionBroadcast> sendAmountAndAsset(String passFrom, BurstAddress receiver, BurstValue value,
+    BurstValue fee, BurstID assetId, BurstValue assetAmount) {
+
+        byte[] pubKeyFrom = bc.getPublicKey(passFrom);
+
+        //TO-DO: Kit need to upgrade to support asset transfer with BURST 
+        return bns.generateTransferAssetTransaction(pubKeyFrom, receiver, assetId, assetAmount, fee, 1440)
+                .flatMap(unsignedTransactionBytes -> {
+                    byte[] signedTransactionBytes = bc.signTransaction(passFrom, unsignedTransactionBytes);
+                    return bns.broadcastTransaction(signedTransactionBytes);
+                });
     }
     
     /**

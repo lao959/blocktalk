@@ -21,15 +21,15 @@ import bt.compiler.TargetCompilerVersion;
 @TargetCompilerVersion(CompilerVersion.v0_0_1)
 public class FundsForFaucet  extends Contract {
 
-    static final String ANAME = "FFF";
-    static final String ADESC = "Hold FFF to support BURST";
-    static final int    ADECIMALS = 8;    
-    static final long   ACAPABILITY = 1_000_000_000L * ONE_BURST;
+    public static final String ANAME = "FFF";
+    public static final String ADESC = "Hold FFF to support BURST";
+    public static final int    ADECIMALS = 8;    
+    public static final long   ACAPABILITY = 1_000_000_000L * ONE_BURST;
 
-    static final long   PAYTHRESHOLD = 1000L * ONE_BURST;
-    static final int    PERCENTAGETOPAY = 20;
-    static final String MSGTOSUPPLIER = "Thank you for supporting.";
-    static final String MSGFAILTOWITHDRAL = "Sorry, no enough BURST.";
+    public static final long   PAYTHRESHOLD = 1000L * ONE_BURST;
+    public static final int    PERCENTAGETOPAY = 20;
+    public static final String MSGTOSUPPLIER = "Thank you for supporting.";
+    public static final String MSGFAILTOWITHDRAL = "Sorry, no enough BURST.";
 
     long coinId = 0L;
     Address holdersContract;
